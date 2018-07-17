@@ -1,16 +1,22 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import { createStore } from "redux";
+import { Provider, connect } from "react-redux";
+//connect, provider
 import "./index.css";
 import registerServiceWorker from "./registerServiceWorker";
 
-const update = (model={
+const update = (
+  model = {
     isRunning: false,
     time: 0
-  }, action) => {
+  },
+  action
+) => {
   const updates = {
     TICK: model => {
       return Object.assign(
+        {},
         model,
         model.isRunning
           ? {
@@ -20,44 +26,59 @@ const update = (model={
       );
     },
     START: model => {
-      return Object.assign(model, { isRunning: true });
+      return Object.assign({}, model, { isRunning: true });
     },
     STOP: model => {
-      return Object.assign(model, { isRunning: false });
+      return Object.assign({}, model, { isRunning: false });
     }
   };
   return (updates[action.type] || (() => model))(model);
 };
 
-let stateContainer = createStore(update)
+let stateContainer = createStore(update);
 
-let view = m => {
-  let clickHandler = event => {
-    stateContainer.dispatch(m.isRunning ? { type: "STOP" } : { type: "START" });
+function mapStateToProps(state) {
+  return state;
+}
+
+function mapDispatchToProps(dispatch) {
+  return {
+    onStart: () => {
+      dispatch({ type: "START" });
+    },
+    onStop: () => {
+      dispatch({ type: "STOP" });
+    }
   };
+}
 
+let StopWatch = connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(props => {
   return (
     <div>
-      {m.time}
+      {props.time}
       <br />
       <br />
       <br />
-      <button onClick={clickHandler}>
+      <button onClick={props.isRunning ? props.onStop : props.onStart}>
         {" "}
-        {m.isRunning ? "Stop" : "Start"}
+        {props.isRunning ? "Stop" : "Start"}
       </button>
     </div>
   );
-};
+});
 
-const render = () => {
-  ReactDOM.render(view(stateContainer.getState()), document.getElementById("root"));
-};
+ReactDOM.render(
+  <Provider store={stateContainer}>
+    <StopWatch />
+  </Provider>,
+  document.getElementById("root")
+);
 
-render();
 registerServiceWorker();
-stateContainer.subscribe(render);
 
 setInterval(function() {
-  stateContainer.dispatch({type: 'TICK'})
+  stateContainer.dispatch({ type: "TICK" });
 }, 1000);
